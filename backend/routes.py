@@ -2,26 +2,85 @@ from flask import Blueprint, request
 
 from database import SessionLocal
 from models import PokemonCard
+from tcg_api import search_pokemon_card
+from scanner import extract_text_from_image, extract_possible_card_name
 
 
-card_routes = Blueprint(
-    "card_routes",
-    __name__
-)
+card_routes = Blueprint("card_routes", __name__)
 
 
 @card_routes.route("/test")
 def test():
+    return {"status": "ok"}
+
+
+@card_routes.route("/search", methods=["GET"])
+def search_card():
+    name = request.args.get("name")
+
+    if not name:
+        return {"error": "Debes ingresar un nombre"}, 400
+
+    cards = search_pokemon_card(name)
+
+    return cards
+
+
+@card_routes.route("/scan", methods=["POST"])
+def scan_card():
+    try:
+        if "image" not in request.files:
+            return {"error": "No se envió ninguna imagen"}, 400
+
+        image = request.files["image"]
+
+        text = extract_text_from_image(image)
+        possible_name = extract_possible_card_name(text)
+
+        if not possible_name:
+            return {
+                "error": "No se pudo detectar texto en la imagen",
+                "raw_text": text
+            }, 400
+
+        cards = search_pokemon_card(possible_name)
+
+        return {
+            "detected_text": text,
+            "possible_name": possible_name,
+            "results": cards
+        }
+
+    except Exception as error:
+        return {
+            "error": str(error)
+        }, 500
+    if "image" not in request.files:
+        return {"error": "No se envió ninguna imagen"}, 400
+
+    image = request.files["image"]
+
+    text = extract_text_from_image(image)
+    possible_name = extract_possible_card_name(text)
+
+    if not possible_name:
+        return {
+            "error": "No se pudo detectar texto en la imagen",
+            "raw_text": text
+        }, 400
+
+    cards = search_pokemon_card(possible_name)
+
     return {
-        "status": "ok"
+        "detected_text": text,
+        "possible_name": possible_name,
+        "results": cards
     }
 
 
 @card_routes.route("/cards", methods=["GET"])
 def get_cards():
-
     db = SessionLocal()
-
     cards = db.query(PokemonCard).all()
 
     result = []
@@ -40,13 +99,11 @@ def get_cards():
         })
 
     db.close()
-
     return result
 
 
 @card_routes.route("/cards", methods=["POST"])
 def create_card():
-
     data = request.json
 
     db = SessionLocal()
@@ -78,60 +135,37 @@ def create_card():
 
 @card_routes.route("/cards/<int:id>", methods=["DELETE"])
 def delete_card(id):
-
     db = SessionLocal()
 
-    card = db.query(PokemonCard).filter(
-        PokemonCard.id == id
-    ).first()
+    card = db.query(PokemonCard).filter(PokemonCard.id == id).first()
 
     if not card:
         db.close()
-        return {
-            "error": "Carta no encontrada"
-        }, 404
+        return {"error": "Carta no encontrada"}, 404
 
     db.delete(card)
     db.commit()
-
     db.close()
 
-    return {
-        "message": "Carta eliminada correctamente"
-    }
+    return {"message": "Carta eliminada correctamente"}
 
 
 @card_routes.route("/cards/<int:id>", methods=["PUT"])
 def update_card(id):
-
     data = request.json
 
     db = SessionLocal()
 
-    card = db.query(PokemonCard).filter(
-        PokemonCard.id == id
-    ).first()
+    card = db.query(PokemonCard).filter(PokemonCard.id == id).first()
 
     if not card:
         db.close()
-        return {
-            "error": "Carta no encontrada"
-        }, 404
+        return {"error": "Carta no encontrada"}, 404
 
-    card.quantity = data.get(
-        "quantity",
-        card.quantity
-    )
-
-    card.for_trade = data.get(
-        "for_trade",
-        card.for_trade
-    )
+    card.quantity = data.get("quantity", card.quantity)
+    card.for_trade = data.get("for_trade", card.for_trade)
 
     db.commit()
-
     db.close()
 
-    return {
-        "message": "Carta actualizada correctamente"
-    }
+    return {"message": "Carta actualizada correctamente"}
