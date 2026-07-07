@@ -6,6 +6,10 @@ function Inventory() {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [rarityFilter, setRarityFilter] = useState("all");
+
   const loadCards = async () => {
     try {
       const data = await getCards();
@@ -33,6 +37,23 @@ function Inventory() {
   const totalCards = cards.reduce((total, card) => total + card.quantity, 0);
   const tradeCards = cards.filter((card) => card.for_trade).length;
 
+  const types = [...new Set(cards.map((card) => card.type))];
+  const rarities = [...new Set(cards.map((card) => card.rarity))];
+
+  const filteredCards = cards.filter((card) => {
+    const matchesSearch = card.name
+      .toLowerCase()
+      .includes(search.toLowerCase());
+
+    const matchesType =
+      typeFilter === "all" || card.type === typeFilter;
+
+    const matchesRarity =
+      rarityFilter === "all" || card.rarity === rarityFilter;
+
+    return matchesSearch && matchesType && matchesRarity;
+  });
+
   if (loading) {
     return <div className="page">Cargando inventario...</div>;
   }
@@ -43,8 +64,8 @@ function Inventory() {
         <p className="eyebrow">Inventario</p>
         <h1>Tu colección Pokémon</h1>
         <p>
-          Revisa tus cartas guardadas, elimina cartas duplicadas o marca cuáles
-          quieres dejar disponibles para intercambio.
+          Filtra tus cartas por nombre, tipo o rareza para encontrar más rápido
+          lo que tienes guardado.
         </p>
       </div>
 
@@ -65,8 +86,41 @@ function Inventory() {
         </div>
       </div>
 
+      <div className="filter-panel">
+        <input
+          type="text"
+          placeholder="Buscar por nombre..."
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+
+        <select
+          value={typeFilter}
+          onChange={(event) => setTypeFilter(event.target.value)}
+        >
+          <option value="all">Todos los tipos</option>
+          {types.map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={rarityFilter}
+          onChange={(event) => setRarityFilter(event.target.value)}
+        >
+          <option value="all">Todas las rarezas</option>
+          {rarities.map((rarity) => (
+            <option key={rarity} value={rarity}>
+              {rarity}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <CardGrid
-        cards={cards}
+        cards={filteredCards}
         onDelete={handleDelete}
         onRefresh={loadCards}
       />

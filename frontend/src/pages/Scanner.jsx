@@ -7,6 +7,8 @@ function Scanner() {
 
   const [preview, setPreview] = useState("");
   const [cardName, setCardName] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [forTrade, setForTrade] = useState(false);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
@@ -49,8 +51,8 @@ function Scanner() {
       card_type: card.card_type,
       set_name: card.set_name,
       image_url: card.image_url,
-      quantity: 1,
-      for_trade: false
+      quantity: Number(quantity),
+      for_trade: forTrade
     };
 
     await createCard(cardToSave);
@@ -59,14 +61,23 @@ function Scanner() {
     navigate("/inventory");
   };
 
+  const handleClear = () => {
+    setPreview("");
+    setCardName("");
+    setQuantity(1);
+    setForTrade(false);
+    setResults([]);
+    setSearched(false);
+  };
+
   return (
     <div className="page">
       <div className="section-header">
         <p className="eyebrow">Escáner asistido</p>
-        <h1>Identifica una carta Pokémon</h1>
+        <h1>Identifica y registra una carta</h1>
         <p>
-          Sube una imagen de tu carta, escribe el nombre que aparece en ella
-          y selecciona la coincidencia correcta.
+          Sube una imagen como referencia, escribe el nombre de la carta y
+          selecciona la coincidencia correcta desde la API Pokémon.
         </p>
       </div>
 
@@ -94,33 +105,57 @@ function Scanner() {
 
           <input
             type="text"
-            placeholder="Ejemplo: Pikachu"
+            placeholder="Nombre de la carta, ejemplo: Pikachu"
             value={cardName}
             onChange={(event) => setCardName(event.target.value)}
           />
 
-          <button onClick={handleSearch}>
-            {loading ? "Buscando..." : "Buscar carta"}
-          </button>
+          <input
+            type="number"
+            min="1"
+            value={quantity}
+            onChange={(event) => setQuantity(event.target.value)}
+          />
+
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={forTrade}
+              onChange={(event) => setForTrade(event.target.checked)}
+            />
+            Marcar como disponible para intercambio
+          </label>
+
+          <div className="scanner-buttons">
+            <button onClick={handleSearch}>
+              {loading ? "Buscando..." : "Buscar carta"}
+            </button>
+
+            <button className="secondary-action" onClick={handleClear}>
+              Limpiar
+            </button>
+          </div>
         </div>
 
         <div className="scanner-help">
-          <h3>Consejos</h3>
-          <p>Usa una foto clara donde se vea el nombre de la carta.</p>
-          <p>Escribe solo el nombre principal, por ejemplo “Charizard”.</p>
-          <p>Luego elige la carta correcta según imagen, rareza y set.</p>
+          <h3>Cómo usarlo</h3>
+          <p>1. Sube una imagen de la carta.</p>
+          <p>2. Escribe el nombre que aparece arriba en la carta.</p>
+          <p>3. Define cantidad e intercambio.</p>
+          <p>4. Elige la carta correcta y guárdala.</p>
         </div>
       </div>
 
       {searched && !loading && results.length === 0 && (
         <div className="empty-state">
-          No se encontraron cartas con ese nombre.
+          No se encontraron cartas. Prueba con un nombre más simple, como
+          “Pikachu”, “Charizard” o “Mewtwo”.
         </div>
       )}
 
       {results.length > 0 && (
         <>
-          <h2>Resultados encontrados</h2>
+          <h2>Coincidencias encontradas</h2>
 
           <div className="card-grid">
             {results.map((card) => (
@@ -136,7 +171,7 @@ function Scanner() {
                 <p><strong>Set:</strong> {card.set_name}</p>
 
                 <button onClick={() => handleAddCard(card)}>
-                  Confirmar y agregar
+                  Guardar esta carta
                 </button>
               </div>
             ))}

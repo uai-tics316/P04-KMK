@@ -22,7 +22,6 @@ def search_card():
         return {"error": "Debes ingresar un nombre"}, 400
 
     cards = search_pokemon_card(name)
-
     return cards
 
 
@@ -52,30 +51,7 @@ def scan_card():
         }
 
     except Exception as error:
-        return {
-            "error": str(error)
-        }, 500
-    if "image" not in request.files:
-        return {"error": "No se envió ninguna imagen"}, 400
-
-    image = request.files["image"]
-
-    text = extract_text_from_image(image)
-    possible_name = extract_possible_card_name(text)
-
-    if not possible_name:
-        return {
-            "error": "No se pudo detectar texto en la imagen",
-            "raw_text": text
-        }, 400
-
-    cards = search_pokemon_card(possible_name)
-
-    return {
-        "detected_text": text,
-        "possible_name": possible_name,
-        "results": cards
-    }
+        return {"error": str(error)}, 500
 
 
 @card_routes.route("/cards", methods=["GET"])
@@ -107,6 +83,27 @@ def create_card():
     data = request.json
 
     db = SessionLocal()
+
+    existing_card = db.query(PokemonCard).filter(
+        PokemonCard.card_id == data.get("card_id")
+    ).first()
+
+    if existing_card:
+        existing_card.quantity = existing_card.quantity + data.get("quantity", 1)
+
+        db.commit()
+        db.refresh(existing_card)
+
+        updated_id = existing_card.id
+        updated_quantity = existing_card.quantity
+
+        db.close()
+
+        return {
+            "message": "La carta ya existía. Se aumentó la cantidad.",
+            "id": updated_id,
+            "quantity": updated_quantity
+        }, 200
 
     card = PokemonCard(
         card_id=data.get("card_id"),
