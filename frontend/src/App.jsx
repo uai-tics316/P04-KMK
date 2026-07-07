@@ -4,6 +4,8 @@ import Home from "./pages/Home";
 import Inventory from "./pages/Inventory";
 import AddCard from "./pages/AddCard";
 import Scanner from "./pages/Scanner";
+import Trade from "./pages/Trade";
+import Stats from "./pages/Stats";
 import "./App.css";
 
 function App() {
@@ -13,9 +15,11 @@ function App() {
 
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/inventory" element={<Inventory />} />
-        <Route path="/add-card" element={<AddCard />} />
         <Route path="/scanner" element={<Scanner />} />
+        <Route path="/inventory" element={<Inventory />} />
+        <Route path="/trade" element={<Trade />} />
+        <Route path="/stats" element={<Stats />} />
+        <Route path="/add-card" element={<AddCard />} />
       </Routes>
     </BrowserRouter>
   );

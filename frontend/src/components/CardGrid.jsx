@@ -1,8 +1,12 @@
 import CardItem from "./CardItem";
 
-function CardGrid({ cards, onDelete }) {
+function CardGrid({ cards, onDelete, onRefresh }) {
   if (cards.length === 0) {
-    return <p>No hay cartas guardadas todavía.</p>;
+    return (
+      <div className="empty-state">
+        No hay cartas guardadas todavía.
+      </div>
+    );
   }
 
   return (
@@ -12,6 +16,7 @@ function CardGrid({ cards, onDelete }) {
           key={card.id}
           card={card}
           onDelete={onDelete}
+          onRefresh={onRefresh}
         />
       ))}
     </div>

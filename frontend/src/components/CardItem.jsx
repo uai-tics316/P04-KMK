@@ -1,4 +1,14 @@
-function CardItem({ card, onDelete }) {
+import { updateCard } from "../services/api";
+
+function CardItem({ card, onDelete, onRefresh }) {
+  const toggleTrade = async () => {
+    await updateCard(card.id, {
+      for_trade: !card.for_trade
+    });
+
+    onRefresh();
+  };
+
   return (
     <div className="card-item">
       {card.image_url && (
@@ -11,14 +21,20 @@ function CardItem({ card, onDelete }) {
       <p><strong>Tipo:</strong> {card.type}</p>
       <p><strong>Set:</strong> {card.set_name}</p>
       <p><strong>Cantidad:</strong> {card.quantity}</p>
-      <p>
-        <strong>Intercambio:</strong>{" "}
-        {card.for_trade ? "Sí" : "No"}
-      </p>
 
-      <button onClick={() => onDelete(card.id)}>
-        Eliminar
-      </button>
+      <span className={card.for_trade ? "trade-badge active" : "trade-badge"}>
+        {card.for_trade ? "Disponible para intercambio" : "No intercambiable"}
+      </span>
+
+      <div className="card-actions">
+        <button onClick={toggleTrade}>
+          {card.for_trade ? "Quitar intercambio" : "Marcar intercambio"}
+        </button>
+
+        <button className="danger-button" onClick={() => onDelete(card.id)}>
+          Eliminar
+        </button>
+      </div>
     </div>
   );
 }
