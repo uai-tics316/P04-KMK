@@ -1,26 +1,57 @@
-from sqlalchemy import Column
-from sqlalchemy import Integer
-from sqlalchemy import String
-from sqlalchemy import Boolean
+from sqlalchemy import Boolean, Column, Integer, String
 
 from database import Base
+
 
 class PokemonCard(Base):
     __tablename__ = "pokemon_cards"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
 
-    card_id = Column(String)
-    name = Column(String)
+    card_id = Column(
+        String,
+        unique=True,
+        nullable=False,
+        index=True,
+    )
 
-    rarity = Column(String)
+    name = Column(
+        String,
+        nullable=False,
+    )
 
-    card_type = Column(String)
+    rarity = Column(
+        String,
+        nullable=False,
+        default="Unknown",
+    )
 
-    set_name = Column(String)
+    card_type = Column(
+        String,
+        nullable=False,
+        default="Unknown",
+    )
 
-    image_url = Column(String)
+    set_name = Column(
+        String,
+        nullable=False,
+        default="Unknown",
+    )
 
-    quantity = Column(Integer)
+    image_url = Column(
+        String,
+        nullable=False,
+        default="",
+    )
 
-    for_trade = Column(Boolean)
+    quantity = Column(
+        Integer,
+        nullable=False,
+        default=1,
+    )
+
+    for_trade = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )

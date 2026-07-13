@@ -70,13 +70,12 @@ pokemon-card-scanner/
 ## 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/TU-USUARIO/TU-REPOSITORIO.git
-```
+git clone https://github.com/TU-USUARIO/P04-KMK.git```
 
 Entrar al proyecto:
 
 ```bash
-cd TU-REPOSITORIO
+cd P04-KMK
 ```
 
 ---

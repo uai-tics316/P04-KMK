@@ -1,44 +1,64 @@
+from typing import Any
+
 import requests
+from requests import RequestException
 
 
-def search_pokemon_card(name):
+POKEMON_TCG_API_URL = "https://api.pokemontcg.io/v2/cards"
+REQUEST_TIMEOUT_SECONDS = 10
+
+
+def normalize_card(card: dict[str, Any]) -> dict[str, Any]:
+    card_types = card.get("types") or ["Unknown"]
+    card_set = card.get("set") or {}
+    images = card.get("images") or {}
+
+    return {
+        "card_id": card.get("id", ""),
+        "name": card.get("name", "Unknown"),
+        "rarity": card.get("rarity") or "Unknown",
+        "card_type": card_types[0] if card_types else "Unknown",
+        "set_name": card_set.get("name", "Unknown"),
+        "image_url": images.get("small", ""),
+    }
+
+
+def search_pokemon_card(name: str) -> list[dict[str, Any]]:
     clean_name = name.strip()
 
     if not clean_name:
         return []
 
-    url = "https://api.pokemontcg.io/v2/cards"
-
     search_attempts = [
-        {"q": f'name:{clean_name}*', "pageSize": 20},
+        {"q": f"name:{clean_name}*", "pageSize": 20},
         {"q": f'name:"{clean_name}"', "pageSize": 20},
-        {"q": clean_name, "pageSize": 20}
+        {"q": clean_name, "pageSize": 20},
     ]
 
+    last_error: Exception | None = None
+
     for params in search_attempts:
-        response = requests.get(url, params=params)
+        try:
+            response = requests.get(
+                POKEMON_TCG_API_URL,
+                params=params,
+                timeout=REQUEST_TIMEOUT_SECONDS,
+            )
 
-        if response.status_code != 200:
-            continue
+            response.raise_for_status()
 
-        data = response.json()
-        results = data.get("data", [])
+            data = response.json()
+            results = data.get("data", [])
 
-        if len(results) > 0:
-            cards = []
+            if results:
+                return [normalize_card(card) for card in results]
 
-            for card in results:
-                card_types = card.get("types", ["Unknown"])
+        except (RequestException, ValueError) as error:
+            last_error = error
 
-                cards.append({
-                    "card_id": card.get("id"),
-                    "name": card.get("name"),
-                    "rarity": card.get("rarity", "Unknown"),
-                    "card_type": card_types[0] if len(card_types) > 0 else "Unknown",
-                    "set_name": card.get("set", {}).get("name", "Unknown"),
-                    "image_url": card.get("images", {}).get("small", "")
-                })
-
-            return cards
+    if last_error is not None:
+        raise RuntimeError(
+            "No fue posible comunicarse con la Pokémon TCG API."
+        ) from last_error
 
     return []

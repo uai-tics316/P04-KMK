@@ -1,26 +1,61 @@
+import os
+
 from flask import Flask
 from flask_cors import CORS
 
-from database import engine
-from models import Base
-
+from database import Base, engine
+from models import PokemonCard  # noqa: F401
 from routes import card_routes
 
-app = Flask(__name__)
-CORS(app)
 
-Base.metadata.create_all(bind=engine)
+def create_app() -> Flask:
+    app = Flask(__name__)
 
-app.register_blueprint(
-    card_routes,
-    url_prefix="/api"
-)
+    frontend_origin = os.getenv(
+        "FRONTEND_ORIGIN",
+        "http://localhost:5173",
+    )
 
-@app.route("/")
-def home():
-    return {
-        "message": "Pokemon Card Scanner API funcionando"
-    }
+    CORS(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": [frontend_origin],
+            }
+        },
+    )
+
+    Base.metadata.create_all(bind=engine)
+
+    app.register_blueprint(
+        card_routes,
+        url_prefix="/api",
+    )
+
+    @app.get("/")
+    def home():
+        return {
+            "message": "PokéScan API funcionando",
+            "status": "ok",
+        }
+
+    return app
+
+
+app = create_app()
+
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    debug_mode = os.getenv(
+        "FLASK_DEBUG",
+        "false",
+    ).lower() == "true"
+
+    host = os.getenv("FLASK_HOST", "127.0.0.1")
+    port = int(os.getenv("FLASK_PORT", "5000"))
+
+    app.run(
+        host=host,
+        port=port,
+        debug=debug_mode,
+    )
